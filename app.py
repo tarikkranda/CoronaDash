@@ -28,7 +28,7 @@ def refreshData():
         .merge(loadData("time_series_covid19_deaths_global.csv", "CumDeaths")) \
         .merge(loadData("time_series_covid19_recovered_global.csv", "CumRecovered"))
     allData["CumDeathRatio"] = round((allData["CumDeaths"] / (allData["CumDeaths"] + allData["CumRecovered"])) * 100, 2)
-    allData.to_pickle(fileNamePickle)
+    allData.to_pickle(fileNamePickle, protocol=3)
     return allData
 
 def allData():
