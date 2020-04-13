@@ -27,6 +27,7 @@ def refreshData():
     allData = loadData("time_series_covid19_confirmed_global.csv", "CumConfirmed") \
         .merge(loadData("time_series_covid19_deaths_global.csv", "CumDeaths")) \
         .merge(loadData("time_series_covid19_recovered_global.csv", "CumRecovered"))
+    allData["CumDeathRatio"] = round((allData["CumDeaths"] / (allData["CumDeaths"] + allData["CumRecovered"])) * 100, 2)
     allData.to_pickle(fileNamePickle)
     return allData
 
@@ -91,7 +92,7 @@ app.layout = html.Div(
                 html.H5('Selected Metrics'),
                 dcc.Checklist(
                     id='metrics',
-                    options=[{'label':m, 'value':m} for m in ['Confirmed', 'Deaths', 'Recovered']],
+                    options=[{'label':m, 'value':m} for m in ['Confirmed', 'Deaths', 'Recovered', 'DeathRatio']],
                     value=['Confirmed', 'Deaths']
                 )
             ])
@@ -132,7 +133,7 @@ def filtered_data(country, state):
         data = data.drop('Province/State', axis=1).groupby("date").sum().reset_index()
     else:
         data = data.loc[data['Province/State'] == state]
-    newCases = data.select_dtypes(include='Int64').diff().fillna(0)
+    newCases = data.select_dtypes(include=['Int64','float64']).diff().fillna(0)
     newCases.columns = [column.replace('Cum', 'New') for column in newCases.columns]
     data = data.join(newCases)
     data['dateStr'] = data['date'].dt.strftime('%b %d, %Y')
@@ -143,7 +144,7 @@ def barchart(data, metrics, prefix="", yaxisTitle=""):
         go.Bar( 
             name=metric, x=data.date, y=data[prefix + metric],
             marker_line_color='rgb(0,0,0)', marker_line_width=1,
-            marker_color={ 'Deaths':'rgb(200,30,30)', 'Recovered':'rgb(30,200,30)', 'Confirmed':'rgb(100,140,240)'}[metric]
+            marker_color={ 'Deaths':'rgb(200,30,30)', 'Recovered':'rgb(30,200,30)', 'Confirmed':'rgb(100,140,240)', 'DeathRatio':'rgb(70,100,150)'}[metric]
         ) for metric in metrics
     ])
     figure.update_layout( 
